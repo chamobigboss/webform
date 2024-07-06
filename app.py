@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+from flask_cors import CORS
 import os
 import json
 
 app = Flask(__name__)
+CORS(app)
 
 # Leer credenciales desde una variable de entorno
 credentials_info = json.loads(os.environ.get('GOOGLE_CREDENTIALS'))
