@@ -2,17 +2,18 @@ from flask import Flask, request, jsonify
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import os
+import json
 
 app = Flask(__name__)
 
-# Rutas de archivo
-SERVICE_ACCOUNT_FILE = 'path/to/credentials.json'
+# Leer credenciales desde una variable de entorno
+credentials_info = json.loads(os.environ.get('GOOGLE_CREDENTIALS'))
 SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID'
 
 # Autenticación y construcción de servicio
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-credentials = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES
+credentials = service_account.Credentials.from_service_account_info(
+    credentials_info, scopes=SCOPES
 )
 service = build('sheets', 'v4', credentials=credentials)
 
