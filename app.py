@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 # Leer credenciales desde una variable de entorno
 credentials_info = json.loads(os.environ.get('GOOGLE_CREDENTIALS'))
-SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID'
+SPREADSHEET_ID = '1E-UUU_e234fj6H1xuqKFuzamiF0OQkJkuDbln53utUg'  # Reemplaza con tu propio ID de la hoja de cálculo
 
 # Autenticación y construcción de servicio
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
@@ -25,7 +25,7 @@ def submit():
 
     try:
         sheet = service.spreadsheets()
-        range_name = 'Sheet1!A1:B1'
+        range_name = 'Sheet1!A1:B1'  # Reemplaza 'Sheet1' con el nombre de tu hoja si es diferente
         values = [[name, email]]
         body = {'values': values}
 
@@ -41,4 +41,5 @@ def submit():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
