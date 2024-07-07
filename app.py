@@ -19,7 +19,7 @@ try:
 except Exception as e:
     app.logger.error('Error al cargar credenciales: %s', e)
 
-SPREADSHEET_ID = '1E-UUU_e234fj6H1xuqKFuzamiF0OQkJkuDbln53utUg'  # Reemplaza con tu propio ID de la hoja de cálculo
+SPREADSHEET_ID = '1a2b3c4d5e6f7g8h9i0j'  # Reemplaza con tu propio ID de la hoja de cálculo
 
 # Autenticación y construcción de servicio
 try:
@@ -59,6 +59,48 @@ def submit():
         return jsonify({'status': 'success', 'data': result}), 200
     except Exception as e:
         app.logger.error('Error al enviar datos a Google Sheets: %s', e)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/data', methods=['GET'])
+def get_data():
+    try:
+        sheet = service.spreadsheets()
+        range_name = 'Sheet1!A1:B'  # Reemplaza 'Sheet1' con el nombre de tu hoja si es diferente
+        result = sheet.values().get(
+            spreadsheetId=SPREADSHEET_ID,
+            range=range_name
+        ).execute()
+        
+        values = result.get('values', [])
+        
+        return jsonify({'status': 'success', 'data': values}), 200
+    except Exception as e:
+        app.logger.error('Error al obtener datos de Google Sheets: %s', e)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/update', methods=['POST'])
+def update_data():
+    try:
+        data = request.json
+        index = data.get('index')
+        updated_data = data.get('updatedData')
+
+        sheet = service.spreadsheets()
+        range_name = f'Sheet1!A{index+1}:B{index+1}'  # Ajusta el rango según tus necesidades
+
+        values = [updated_data]
+        body = {'values': values}
+
+        result = sheet.values().update(
+            spreadsheetId=SPREADSHEET_ID,
+            range=range_name,
+            valueInputOption='RAW',
+            body=body
+        ).execute()
+
+        return jsonify({'status': 'success', 'data': result}), 200
+    except Exception as e:
+        app.logger.error('Error al actualizar datos en Google Sheets: %s', e)
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
