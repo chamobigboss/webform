@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Proyecto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        h2 {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        .highlight {
+            background-color: #f9f9f9;
+            font-weight: bold;
+        }
+        .edit-btn, .save-btn, .cancel-btn {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PROYECTO: Génova | PM: José Tomás Rodríguez</h1>
+    <h2>1) INFORMACIÓN DEL PROYECTO</h2>
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>Etapa actual</th>
+                <th>Estado</th>
+                <th>Fecha MC</th>
+                <th>Fecha SC</th>
+                <th>Fecha FC</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Los datos se agregarán aquí dinámicamente -->
+        </tbody>
+    </table>
+
+    <h2>2) PRINCIPALES AVANCES DE LA SEMANA</h2>
+    <table id="avanceTable">
+        <thead>
+            <tr>
+                <th>Área</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Los datos se agregarán aquí dinámicamente -->
+        </tbody>
+    </table>
+
+    <h2>3) HITOS CLAVES SEMANA SIGUIENTE</h2>
+    <table id="hitosTable">
+        <thead>
+            <tr>
+                <th>Hito</th>
+                <th>Acciones propuestas</th>
+                <th>Fecha</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Los datos se agregarán aquí dinámicamente -->
+        </tbody>
+    </table>
+
+    <h2>4) RIESGOS Y PREOCUPACIONES – PROPUESTA DE MITIGACIÓN</h2>
+    <table id="riesgosTable">
+        <thead>
+            <tr>
+                <th>Riesgo/Preocupación</th>
+                <th>Plan de mitigación</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Los datos se agregarán aquí dinámicamente -->
+        </tbody>
+    </table>
+
+    <h2>5) PEDIDOS DE APOYO A OTRAS ÁREAS</h2>
+    <table id="pedidosTable">
+        <thead>
+            <tr>
+                <th>Pedido</th>
+                <th>Fecha requerida</th>
+                <th>Responsable</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Los datos se agregarán aquí dinámicamente -->
+        </tbody>
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', loadData);
+
+        async function loadData() {
+            try {
+                const response = await fetch('https://webform-jwnb.onrender.com/data');
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    const dataTable = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+                    dataTable.innerHTML = '';
+
+                    result.data.forEach((row, index) => {
+                        const newRow = dataTable.insertRow();
+
+                        row.forEach((cell) => {
+                            const newCell = newRow.insertCell();
+                            newCell.textContent = cell;
+                        });
+
+                        const actionCell = newRow.insertCell();
+                        const editButton = document.createElement('button');
+                        editButton.textContent = 'Editar';
+                        editButton.className = 'edit-btn';
+                        editButton.onclick = () => enableEdit(newRow, index);
+                        actionCell.appendChild(editButton);
+                    });
+                } else {
+                    console.error('Error al cargar datos:', result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function enableEdit(row, index) {
+            const cells = row.getElementsByTagName('td');
+            for (let i = 0; i < cells.length - 1; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = cells[i].textContent;
+                cells[i].textContent = '';
+                cells[i].appendChild(input);
+            }
+            const actionCell = cells[cells.length - 1];
+            actionCell.innerHTML = '';
+
+            const saveButton = document.createElement('button');
+            saveButton.textContent = 'Guardar';
+            saveButton.className = 'save-btn';
+            saveButton.onclick = () => saveEdit(row, index);
+            actionCell.appendChild(saveButton);
+
+            const cancelButton = document.createElement('button');
+            cancelButton.textContent = 'Cancelar';
+            cancelButton.className = 'cancel-btn';
+            cancelButton.onclick = loadData; // Volver a cargar los datos sin guardar cambios
+            actionCell.appendChild(cancelButton);
+        }
+
+        async function saveEdit(row, index) {
+            const cells = row.getElementsByTagName('td');
+            const updatedData = [];
+            for (let i = 0; i < cells.length - 1; i++) {
+                updatedData.push(cells[i].getElementsByTagName('input')[0].value);
+            }
+
+            try {
+                const response = await fetch('https://webform-jwnb.onrender.com/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ index, updatedData })
+                });
+
+                if (response.ok) {
+                    loadData(); // Recargar los datos después de guardar los cambios
+                } else {
+                    console.error('Error al actualizar datos.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        document.getElementById('dataForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const messageDiv = document.getElementById('message');
+
+            try {
+                const response = await fetch('https://webform-jwnb.onrender.com/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email })
+                });
+
+                if (response.ok) {
+                    messageDiv.textContent = 'Datos enviados correctamente!';
+                    messageDiv.style.display = 'block';
+                    messageDiv.style.color = 'green';
+                    loadData(); // Recargar los datos después de enviar el formulario
+                } else {
+                    messageDiv.textContent = 'Error al enviar los datos.';
+                    messageDiv.style.display = 'block';
+                    messageDiv.style.color = 'red';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                messageDiv.textContent = 'Error al enviar los datos.';
+                messageDiv.style.display = 'block';
+                messageDiv.style.color = 'red';
+            }
+        });
+
+        // Cargar los datos al cargar la página
+        loadData();
+    </script>
+</body>
+</html>
