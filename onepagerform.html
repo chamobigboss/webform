@@ -37,8 +37,9 @@
 </head>
 <body>
     <h1>PROYECTO: Génova | PM: José Tomás Rodríguez</h1>
+
     <h2>1) INFORMACIÓN DEL PROYECTO</h2>
-    <table id="dataTable">
+    <table id="table1">
         <thead>
             <tr>
                 <th>Etapa actual</th>
@@ -55,7 +56,7 @@
     </table>
 
     <h2>2) PRINCIPALES AVANCES DE LA SEMANA</h2>
-    <table id="avanceTable">
+    <table id="table2">
         <thead>
             <tr>
                 <th>Área</th>
@@ -69,12 +70,13 @@
     </table>
 
     <h2>3) HITOS CLAVES SEMANA SIGUIENTE</h2>
-    <table id="hitosTable">
+    <table id="table3">
         <thead>
             <tr>
                 <th>Hito</th>
                 <th>Acciones propuestas</th>
                 <th>Fecha</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -83,7 +85,7 @@
     </table>
 
     <h2>4) RIESGOS Y PREOCUPACIONES – PROPUESTA DE MITIGACIÓN</h2>
-    <table id="riesgosTable">
+    <table id="table4">
         <thead>
             <tr>
                 <th>Riesgo/Preocupación</th>
@@ -97,7 +99,7 @@
     </table>
 
     <h2>5) PEDIDOS DE APOYO A OTRAS ÁREAS</h2>
-    <table id="pedidosTable">
+    <table id="table5">
         <thead>
             <tr>
                 <th>Pedido</th>
@@ -112,15 +114,21 @@
     </table>
 
     <script>
-        document.addEventListener('DOMContentLoaded', loadData);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData('Sheet1', 'table1');
+            loadData('Sheet2', 'table2');
+            loadData('Sheet3', 'table3');
+            loadData('Sheet4', 'table4');
+            loadData('Sheet5', 'table5');
+        });
 
-        async function loadData() {
+        async function loadData(sheetName, tableId) {
             try {
-                const response = await fetch('https://webform-jwnb.onrender.com/data');
+                const response = await fetch(`https://webform-jwnb.onrender.com/data/${sheetName}`);
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    const dataTable = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+                    const dataTable = document.getElementById(tableId).getElementsByTagName('tbody')[0];
                     dataTable.innerHTML = '';
 
                     result.data.forEach((row, index) => {
@@ -135,18 +143,18 @@
                         const editButton = document.createElement('button');
                         editButton.textContent = 'Editar';
                         editButton.className = 'edit-btn';
-                        editButton.onclick = () => enableEdit(newRow, index);
+                        editButton.onclick = () => enableEdit(newRow, index, sheetName, tableId);
                         actionCell.appendChild(editButton);
                     });
                 } else {
-                    console.error('Error al cargar datos:', result.message);
+                    console.error(`Error al cargar datos de ${sheetName}:`, result.message);
                 }
             } catch (error) {
                 console.error('Error:', error);
             }
         }
 
-        function enableEdit(row, index) {
+        function enableEdit(row, index, sheetName, tableId) {
             const cells = row.getElementsByTagName('td');
             for (let i = 0; i < cells.length - 1; i++) {
                 const input = document.createElement('input');
@@ -161,17 +169,17 @@
             const saveButton = document.createElement('button');
             saveButton.textContent = 'Guardar';
             saveButton.className = 'save-btn';
-            saveButton.onclick = () => saveEdit(row, index);
+            saveButton.onclick = () => saveEdit(row, index, sheetName, tableId);
             actionCell.appendChild(saveButton);
 
             const cancelButton = document.createElement('button');
             cancelButton.textContent = 'Cancelar';
             cancelButton.className = 'cancel-btn';
-            cancelButton.onclick = loadData; // Volver a cargar los datos sin guardar cambios
+            cancelButton.onclick = () => loadData(sheetName, tableId); // Volver a cargar los datos sin guardar cambios
             actionCell.appendChild(cancelButton);
         }
 
-        async function saveEdit(row, index) {
+        async function saveEdit(row, index, sheetName, tableId) {
             const cells = row.getElementsByTagName('td');
             const updatedData = [];
             for (let i = 0; i < cells.length - 1; i++) {
@@ -179,7 +187,7 @@
             }
 
             try {
-                const response = await fetch('https://webform-jwnb.onrender.com/update', {
+                const response = await fetch(`https://webform-jwnb.onrender.com/update/${sheetName}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -188,50 +196,14 @@
                 });
 
                 if (response.ok) {
-                    loadData(); // Recargar los datos después de guardar los cambios
+                    loadData(sheetName, tableId); // Recargar los datos después de guardar los cambios
                 } else {
-                    console.error('Error al actualizar datos.');
+                    console.error(`Error al actualizar datos en ${sheetName}.`);
                 }
             } catch (error) {
                 console.error('Error:', error);
             }
         }
-
-        document.getElementById('dataForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const messageDiv = document.getElementById('message');
-
-            try {
-                const response = await fetch('https://webform-jwnb.onrender.com/submit', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ name, email })
-                });
-
-                if (response.ok) {
-                    messageDiv.textContent = 'Datos enviados correctamente!';
-                    messageDiv.style.display = 'block';
-                    messageDiv.style.color = 'green';
-                    loadData(); // Recargar los datos después de enviar el formulario
-                } else {
-                    messageDiv.textContent = 'Error al enviar los datos.';
-                    messageDiv.style.display = 'block';
-                    messageDiv.style.color = 'red';
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                messageDiv.textContent = 'Error al enviar los datos.';
-                messageDiv.style.display = 'block';
-                messageDiv.style.color = 'red';
-            }
-        });
-
-        // Cargar los datos al cargar la página
-        loadData();
     </script>
 </body>
 </html>
