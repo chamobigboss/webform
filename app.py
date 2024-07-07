@@ -13,24 +13,33 @@ CORS(app)
 logging.basicConfig(level=logging.DEBUG)
 
 # Leer credenciales desde una variable de entorno
-credentials_info = json.loads(os.environ.get('GOOGLE_CREDENTIALS'))
+try:
+    credentials_info = json.loads(os.environ.get('GOOGLE_CREDENTIALS'))
+    app.logger.debug('Credenciales cargadas correctamente')
+except Exception as e:
+    app.logger.error('Error al cargar credenciales: %s', e)
+
 SPREADSHEET_ID = '1E-UUU_e234fj6H1xuqKFuzamiF0OQkJkuDbln53utUg'  # Reemplaza con tu propio ID de la hoja de cálculo
 
 # Autenticación y construcción de servicio
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-credentials = service_account.Credentials.from_service_account_info(
-    credentials_info, scopes=SCOPES
-)
-service = build('sheets', 'v4', credentials=credentials)
+try:
+    SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+    credentials = service_account.Credentials.from_service_account_info(
+        credentials_info, scopes=SCOPES
+    )
+    service = build('sheets', 'v4', credentials=credentials)
+    app.logger.debug('Servicio de Google Sheets construido correctamente')
+except Exception as e:
+    app.logger.error('Error al construir el servicio de Google Sheets: %s', e)
 
 @app.route('/submit', methods=['POST'])
 def submit():
-    data = request.json
-    app.logger.debug('Datos recibidos: %s', data)
-    name = data.get('name')
-    email = data.get('email')
-
     try:
+        data = request.json
+        app.logger.debug('Datos recibidos: %s', data)
+        name = data.get('name')
+        email = data.get('email')
+
         sheet = service.spreadsheets()
         range_name = 'Sheet1!A1:B1'  # Reemplaza 'Sheet1' con el nombre de tu hoja si es diferente
         values = [[name, email]]
