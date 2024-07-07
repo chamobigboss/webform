@@ -32,40 +32,12 @@ try:
 except Exception as e:
     app.logger.error('Error al construir el servicio de Google Sheets: %s', e)
 
-@app.route('/submit', methods=['POST'])
-def submit():
-    try:
-        data = request.json
-        app.logger.debug('Datos recibidos: %s', data)
-        name = data.get('name')
-        email = data.get('email')
-
-        sheet = service.spreadsheets()
-        range_name = 'Sheet1!A1:B1'  # Reemplaza 'Sheet1' con el nombre de tu hoja si es diferente
-        values = [[name, email]]
-        body = {'values': values}
-        
-        app.logger.debug('Enviando datos a Google Sheets: %s', values)
-        
-        result = sheet.values().append(
-            spreadsheetId=SPREADSHEET_ID,
-            range=range_name,
-            valueInputOption='RAW',
-            body=body
-        ).execute()
-        
-        app.logger.debug('Resultado de Google Sheets: %s', result)
-
-        return jsonify({'status': 'success', 'data': result}), 200
-    except Exception as e:
-        app.logger.error('Error al enviar datos a Google Sheets: %s', e)
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-@app.route('/data', methods=['GET'])
-def get_data():
+# Ruta para obtener datos de una hoja específica
+@app.route('/data/<sheet_name>', methods=['GET'])
+def get_data(sheet_name):
     try:
         sheet = service.spreadsheets()
-        range_name = 'Sheet1!A1:B'  # Reemplaza 'Sheet1' con el nombre de tu hoja si es diferente
+        range_name = f'{sheet_name}!A1:Z'  # Ajusta el rango según tus necesidades
         result = sheet.values().get(
             spreadsheetId=SPREADSHEET_ID,
             range=range_name
@@ -75,18 +47,19 @@ def get_data():
         
         return jsonify({'status': 'success', 'data': values}), 200
     except Exception as e:
-        app.logger.error('Error al obtener datos de Google Sheets: %s', e)
+        app.logger.error(f'Error al obtener datos de {sheet_name}: %s', e)
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-@app.route('/update', methods=['POST'])
-def update_data():
+# Ruta para actualizar datos en una hoja específica
+@app.route('/update/<sheet_name>', methods=['POST'])
+def update_data(sheet_name):
     try:
         data = request.json
         index = data.get('index')
         updated_data = data.get('updatedData')
 
         sheet = service.spreadsheets()
-        range_name = f'Sheet1!A{index+1}:B{index+1}'  # Ajusta el rango según tus necesidades
+        range_name = f'{sheet_name}!A{index+1}:Z{index+1}'  # Ajusta el rango según tus necesidades
 
         values = [updated_data]
         body = {'values': values}
@@ -100,7 +73,35 @@ def update_data():
 
         return jsonify({'status': 'success', 'data': result}), 200
     except Exception as e:
-        app.logger.error('Error al actualizar datos en Google Sheets: %s', e)
+        app.logger.error(f'Error al actualizar datos en {sheet_name}: %s', e)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# Ruta para enviar nuevos datos a una hoja específica
+@app.route('/submit/<sheet_name>', methods=['POST'])
+def submit(sheet_name):
+    try:
+        data = request.json
+        app.logger.debug(f'Datos recibidos para {sheet_name}: %s', data)
+        
+        sheet = service.spreadsheets()
+        range_name = f'{sheet_name}!A1:Z1'  # Ajusta el rango según tus necesidades
+        values = [data]  # Suponiendo que los datos están en un formato adecuado
+        body = {'values': values}
+
+        app.logger.debug(f'Enviando datos a Google Sheets: {values}')
+        
+        result = sheet.values().append(
+            spreadsheetId=SPREADSHEET_ID,
+            range=range_name,
+            valueInputOption='RAW',
+            body=body
+        ).execute()
+        
+        app.logger.debug(f'Resultado de Google Sheets: {result}')
+
+        return jsonify({'status': 'success', 'data': result}), 200
+    except Exception as e:
+        app.logger.error(f'Error al enviar datos a {sheet_name}: %s', e)
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
